@@ -1,3 +1,559 @@
-<!-- Este archivo es la app web completa del Sistema de Servicio Social -->
-<!-- Ver instrucciones de configuración en README más abajo -->
-<!-- BUSCA "TU_URL_DE_APPS_SCRIPT_AQUI" y "TU_SPREADSHEET_ID_AQUI" para configurar -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Servicio Social — Sistema de Asistencia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--ink:#1a1a2e;--ink-light:#4a4a6a;--ink-muted:#8888aa;--surface:#f7f6f2;--card:#ffffff;--accent:#2ecc71;--accent-dark:#1da055;--accent-bg:#e8faf1;--warn:#f39c12;--warn-bg:#fef9ee;--danger:#e74c3c;--danger-bg:#fef0ee;--info:#3498db;--info-bg:#eef6fd;--border:rgba(26,26,46,0.1);--radius:12px;--radius-sm:8px}
+body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink);min-height:100vh}
+.nav{background:var(--ink);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100}
+.nav-logo{font-family:'DM Serif Display',serif;color:var(--accent);font-size:18px;letter-spacing:-0.5px}
+.nav-links{display:flex;gap:4px}
+.nav-btn{background:none;border:none;color:rgba(255,255,255,0.6);font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 12px;border-radius:6px;cursor:pointer;transition:all 0.15s}
+.nav-btn:hover{color:#fff;background:rgba(255,255,255,0.1)}
+.nav-btn.active{color:var(--accent);background:rgba(46,204,113,0.15)}
+.view{display:none;padding:24px;max-width:960px;margin:0 auto}
+.view.active{display:block}
+.card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:24px;margin-bottom:16px}
+.card-sm{padding:16px}
+.page-title{font-family:'DM Serif Display',serif;font-size:28px;color:var(--ink);margin-bottom:4px}
+.page-sub{color:var(--ink-muted);font-size:14px;margin-bottom:24px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:16px;text-align:center}
+.stat-val{font-size:32px;font-weight:600;color:var(--ink);line-height:1}
+.stat-label{font-size:12px;color:var(--ink-muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
+.progress-bar{height:8px;background:var(--border);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:var(--accent);border-radius:99px;transition:width 0.5s ease}
+.progress-fill.warn{background:var(--warn)}
+.progress-fill.danger{background:var(--danger)}
+.badge{display:inline-flex;align-items:center;font-size:11px;font-weight:500;padding:3px 10px;border-radius:99px}
+.badge-green{background:var(--accent-bg);color:var(--accent-dark)}
+.badge-warn{background:var(--warn-bg);color:#b7770a}
+.badge-red{background:var(--danger-bg);color:#c0392b}
+.badge-blue{background:var(--info-bg);color:var(--info)}
+.badge-gray{background:#f0eff8;color:var(--ink-light)}
+.btn{display:inline-flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:10px 20px;border-radius:var(--radius-sm);border:none;cursor:pointer;transition:all 0.15s;text-decoration:none}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-dark)}
+.btn-ghost{background:transparent;color:var(--ink);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--surface)}
+.btn-sm{padding:6px 14px;font-size:13px}
+.btn-full{width:100%;justify-content:center}
+.field{margin-bottom:16px}
+.label{display:block;font-size:13px;font-weight:500;color:var(--ink-light);margin-bottom:6px}
+.input,.select,.textarea{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);background:var(--card);transition:border 0.15s;outline:none}
+.input:focus,.select:focus,.textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(46,204,113,0.15)}
+.textarea{resize:vertical;min-height:80px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;font-size:11px;font-weight:600;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)}
+td{padding:12px;border-bottom:1px solid var(--border);color:var(--ink)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface)}
+#toast{position:fixed;bottom:24px;right:24px;padding:14px 20px;border-radius:var(--radius-sm);font-size:14px;font-weight:500;background:var(--ink);color:#fff;z-index:999;transform:translateY(80px);opacity:0;transition:all 0.25s;max-width:320px}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.success{background:var(--accent-dark)}
+#toast.error{background:var(--danger)}
+.qr-container{display:flex;flex-direction:column;align-items:center;padding:40px 24px}
+.qr-box{background:#fff;border:3px solid var(--ink);border-radius:20px;padding:24px;margin:24px 0}
+.qr-token{font-family:'DM Serif Display',serif;font-size:48px;letter-spacing:8px;color:var(--ink);text-align:center;margin:16px 0 8px}
+.qr-timer{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-muted)}
+.timer-bar{flex:1;height:4px;background:var(--border);border-radius:99px;overflow:hidden}
+.timer-fill{height:100%;background:var(--accent);border-radius:99px;transition:width 1s linear}
+.timer-fill.urgent{background:var(--danger)}
+.profile-header{display:flex;align-items:center;gap:20px;margin-bottom:24px}
+.avatar{width:64px;height:64px;border-radius:50%;background:var(--accent-bg);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:22px;color:var(--accent-dark);flex-shrink:0}
+.tarea-card{border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:10px;display:flex;gap:14px;align-items:flex-start;background:var(--card)}
+.tarea-check{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:2px;transition:all 0.15s}
+.tarea-check.done{background:var(--accent);border-color:var(--accent);color:#fff}
+.checkin-card{max-width:420px;margin:40px auto}
+.checkin-icon{width:72px;height:72px;border-radius:50%;background:var(--accent-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:30px}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:24px}
+.tab{padding:10px 20px;font-size:14px;font-weight:500;color:var(--ink-muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;background:none;border-top:none;border-left:none;border-right:none;font-family:'DM Sans',sans-serif}
+.tab.active{color:var(--ink);border-bottom-color:var(--accent)}
+.escuela-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)}
+.escuela-row:last-child{border-bottom:none}
+.section-title{font-weight:600;font-size:16px;margin-bottom:16px}
+.empty{text-align:center;padding:40px 20px;color:var(--ink-muted);font-size:14px}
+.alert{padding:12px 16px;border-radius:var(--radius-sm);font-size:14px;margin-bottom:16px}
+.alert-info{background:var(--info-bg);color:#1d6fa4;border:1px solid rgba(52,152,219,0.2)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,26,46,0.6);z-index:200;align-items:center;justify-content:center}
+.modal-box{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:24px;width:480px;max-height:90vh;overflow-y:auto}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.modal-title{font-family:'DM Serif Display',serif;font-size:20px}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <span class="nav-logo">Servicio Social</span>
+  <div class="nav-links">
+    <button class="nav-btn active" onclick="showView('checkin')">Check-in QR</button>
+    <button class="nav-btn" onclick="showView('alumno')">Mi Perfil</button>
+    <button class="nav-btn" onclick="showView('qr')">Pantalla QR</button>
+    <button class="nav-btn" onclick="showView('admin')">Encargado</button>
+  </div>
+</nav>
+
+<div id="toast"></div>
+
+<!-- CHECK-IN -->
+<div class="view active" id="view-checkin">
+  <div class="checkin-card card">
+    <div class="checkin-icon">🎓</div>
+    <h1 style="font-family:'DM Serif Display',serif;font-size:22px;text-align:center;margin-bottom:6px;">Registro de Asistencia</h1>
+    <p style="text-align:center;color:var(--ink-muted);font-size:14px;margin-bottom:24px;">Ingresa tu matrícula para registrar entrada o salida.</p>
+    <div id="checkin-result" style="display:none;margin-bottom:16px;" class="card card-sm"></div>
+    <div class="field">
+      <label class="label">Matrícula</label>
+      <input class="input" id="ci-matricula" placeholder="Ej: 2021001234" maxlength="20">
+    </div>
+    <div class="field">
+      <label class="label">Código del QR <span style="color:var(--ink-muted);font-weight:400;">(lo ves en pantalla)</span></label>
+      <input class="input" id="ci-token" placeholder="Código de 8 caracteres" maxlength="8" style="font-family:monospace;letter-spacing:3px;text-transform:uppercase;" onkeydown="if(event.key==='Enter')doCheckin()">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="doCheckin()">✓ Registrar asistencia</button>
+    <p style="margin-top:16px;font-size:12px;color:var(--ink-muted);text-align:center;">¿Primera vez? Pide a tu encargado que te registre en el sistema.</p>
+  </div>
+  <div class="card" style="max-width:420px;margin:0 auto;">
+    <p style="font-size:14px;font-weight:500;margin-bottom:8px;">¿Qué es el código del QR?</p>
+    <p style="font-size:13px;color:var(--ink-muted);line-height:1.7;">El encargado muestra una pantalla con un código que cambia cada 30 segundos. Ingresa los 8 caracteres que aparecen debajo del código QR. Esto asegura que estás físicamente presente.</p>
+  </div>
+</div>
+
+<!-- PERFIL ALUMNO -->
+<div class="view" id="view-alumno">
+  <div id="alumno-login-section">
+    <h1 class="page-title">Mi Perfil</h1>
+    <p class="page-sub">Ingresa tu matrícula para ver tus horas y tareas.</p>
+    <div class="card" style="max-width:400px;">
+      <div class="field">
+        <label class="label">Matrícula</label>
+        <input class="input" id="al-matricula" placeholder="Tu número de matrícula" onkeydown="if(event.key==='Enter')loginAlumno()">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="loginAlumno()">Ver mi información</button>
+    </div>
+  </div>
+  <div id="alumno-profile-section" style="display:none;">
+    <div class="profile-header">
+      <div class="avatar" id="al-avatar">A</div>
+      <div>
+        <h1 class="page-title" id="al-nombre">Nombre</h1>
+        <p style="font-size:13px;color:var(--ink-muted);"><span id="al-escuela">Escuela</span> · <span id="al-carrera">Carrera</span></p>
+        <span class="badge badge-green" id="al-status" style="margin-top:4px;">Activo</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="cerrarSesionAlumno()" style="margin-left:auto;">Salir</button>
+    </div>
+    <div class="card">
+      <div class="grid-3" style="margin-bottom:20px;">
+        <div class="stat-card"><div class="stat-val" id="al-horas-acum">0</div><div class="stat-label">Horas acumuladas</div></div>
+        <div class="stat-card"><div class="stat-val" id="al-horas-req">480</div><div class="stat-label">Horas requeridas</div></div>
+        <div class="stat-card"><div class="stat-val" id="al-horas-falt">480</div><div class="stat-label">Horas restantes</div></div>
+      </div>
+      <p style="font-size:13px;font-weight:500;margin-bottom:6px;">Progreso general</p>
+      <div class="progress-bar"><div class="progress-fill" id="al-progress" style="width:0%"></div></div>
+      <p style="font-size:12px;color:var(--ink-muted);margin-top:6px;" id="al-progress-text">0% completado</p>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchAlTab('asistencias',this)">Asistencias</button>
+      <button class="tab" onclick="switchAlTab('tareas',this)">Tareas</button>
+    </div>
+    <div id="al-tab-asistencias"><div class="card card-sm"><div id="al-asistencias-list"></div></div></div>
+    <div id="al-tab-tareas" style="display:none;"><div id="al-tareas-list"></div></div>
+  </div>
+</div>
+
+<!-- PANTALLA QR -->
+<div class="view" id="view-qr">
+  <div id="qr-admin-gate">
+    <h1 class="page-title">Pantalla QR</h1>
+    <p class="page-sub">Verifica tu contraseña para mostrar el código a los alumnos.</p>
+    <div class="card" style="max-width:360px;">
+      <div class="field">
+        <label class="label">Contraseña de administrador</label>
+        <input class="input" type="password" id="qr-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')verificarAdminQR()">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="verificarAdminQR()">Abrir pantalla QR</button>
+    </div>
+  </div>
+  <div id="qr-pantalla" style="display:none;">
+    <div class="qr-container">
+      <h2 style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--ink-muted);margin-bottom:4px;">Escanea para registrar asistencia</h2>
+      <p style="font-size:13px;color:var(--ink-muted);">Este código se actualiza cada 30 segundos</p>
+      <div class="qr-box">
+        <div id="qr-canvas" style="display:flex;justify-content:center;"></div>
+        <div class="qr-token" id="qr-token-display">--------</div>
+        <p style="text-align:center;font-size:12px;color:var(--ink-muted);margin-bottom:12px;">Ingresa estos 8 caracteres junto con tu matrícula</p>
+        <div class="qr-timer">
+          <span id="qr-seconds" style="font-size:13px;font-weight:600;min-width:24px;">30</span>
+          <div class="timer-bar"><div class="timer-fill" id="qr-timer-fill" style="width:100%"></div></div>
+          <span style="font-size:13px;">seg</span>
+        </div>
+      </div>
+      <div class="alert alert-info" style="max-width:440px;margin-top:0;">
+        <strong>Instrucciones:</strong> El alumno abre la app, escribe su matrícula y los <strong>8 caracteres</strong> que aparecen debajo del código QR.
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="cerrarQR()">Cerrar pantalla</button>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL ADMIN -->
+<div class="view" id="view-admin">
+  <div id="admin-login-section">
+    <h1 class="page-title">Panel del Encargado</h1>
+    <p class="page-sub">Acceso restringido. Ingresa tu contraseña para continuar.</p>
+    <div class="card" style="max-width:380px;">
+      <div class="field">
+        <label class="label">Contraseña</label>
+        <input class="input" type="password" id="adm-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')loginAdmin()">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="loginAdmin()">Entrar al panel</button>
+    </div>
+  </div>
+  <div id="admin-panel-section" style="display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+      <div>
+        <h1 class="page-title">Panel del Encargado</h1>
+        <p class="page-sub" style="margin-bottom:0;">Vista general del programa de servicio social</p>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="cerrarSesionAdmin()">Cerrar sesión</button>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchAdminTab('resumen',this)">Resumen</button>
+      <button class="tab" onclick="switchAdminTab('alumnos',this)">Alumnos</button>
+      <button class="tab" onclick="switchAdminTab('tareas',this)">Tareas</button>
+      <button class="tab" onclick="switchAdminTab('escuelas',this)">Escuelas</button>
+    </div>
+
+    <div id="adm-tab-resumen">
+      <div class="grid-4" style="margin-bottom:24px;">
+        <div class="stat-card"><div class="stat-val" id="adm-total-alumnos">—</div><div class="stat-label">Alumnos activos</div></div>
+        <div class="stat-card"><div class="stat-val" id="adm-total-horas">—</div><div class="stat-label">Horas acumuladas</div></div>
+        <div class="stat-card"><div class="stat-val" id="adm-asist-hoy">—</div><div class="stat-label">Check-ins hoy</div></div>
+        <div class="stat-card"><div class="stat-val" id="adm-escuelas">—</div><div class="stat-label">Escuelas</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="card"><p class="section-title">Por escuela</p><div id="adm-por-escuela"></div></div>
+        <div class="card"><p class="section-title">Últimas asistencias</p><div id="adm-ultimas-asist"></div></div>
+      </div>
+    </div>
+
+    <div id="adm-tab-alumnos" style="display:none;">
+      <div style="display:flex;gap:12px;margin-bottom:20px;align-items:center;flex-wrap:wrap;">
+        <input class="input" id="adm-buscar" placeholder="Buscar por nombre o matrícula..." style="max-width:280px;" oninput="filtrarAlumnos()">
+        <select class="select" id="adm-filtro-escuela" style="max-width:180px;" onchange="filtrarAlumnos()"><option value="">Todas las escuelas</option></select>
+        <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="mostrarModal('modal-alumno')">+ Nuevo alumno</button>
+      </div>
+      <div class="card" style="padding:0;">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Alumno</th><th>Escuela</th><th>Progreso</th><th>Horas</th><th>Estado</th><th></th></tr></thead>
+            <tbody id="adm-alumnos-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="adm-tab-tareas" style="display:none;">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
+        <button class="btn btn-primary btn-sm" onclick="mostrarModal('modal-tarea')">+ Nueva tarea</button>
+      </div>
+      <div id="adm-tareas-list"></div>
+    </div>
+
+    <div id="adm-tab-escuelas" style="display:none;">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
+        <button class="btn btn-primary btn-sm" onclick="mostrarModal('modal-escuela')">+ Nueva escuela</button>
+      </div>
+      <div class="card" id="adm-escuelas-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ALUMNO -->
+<div class="modal-overlay" id="modal-alumno">
+  <div class="modal-box">
+    <div class="modal-header"><h2 class="modal-title">Nuevo alumno</h2><button class="btn btn-ghost btn-sm" onclick="cerrarModal('modal-alumno')">✕</button></div>
+    <div class="grid-2">
+      <div class="field"><label class="label">Matrícula *</label><input class="input" id="nm-matricula" placeholder="2021001234"></div>
+      <div class="field"><label class="label">Nombre completo *</label><input class="input" id="nm-nombre" placeholder="Nombre Apellido"></div>
+    </div>
+    <div class="grid-2">
+      <div class="field"><label class="label">Escuela *</label><select class="select" id="nm-escuela"></select></div>
+      <div class="field"><label class="label">Carrera</label><input class="input" id="nm-carrera" placeholder="Ingeniería en..."></div>
+    </div>
+    <div class="grid-2">
+      <div class="field"><label class="label">Horas requeridas</label><input class="input" id="nm-horas" type="number" value="480" min="1"></div>
+      <div class="field"><label class="label">Correo (opcional)</label><input class="input" id="nm-email" type="email" placeholder="correo@escuela.mx"></div>
+    </div>
+    <div class="field"><label class="label">Fecha límite (opcional)</label><input class="input" id="nm-fechafin" type="date"></div>
+    <button class="btn btn-primary btn-full" onclick="crearAlumno()">Registrar alumno</button>
+  </div>
+</div>
+
+<!-- MODAL TAREA -->
+<div class="modal-overlay" id="modal-tarea">
+  <div class="modal-box">
+    <div class="modal-header"><h2 class="modal-title">Asignar tarea</h2><button class="btn btn-ghost btn-sm" onclick="cerrarModal('modal-tarea')">✕</button></div>
+    <div class="field"><label class="label">Alumno *</label><select class="select" id="nt-alumno"></select></div>
+    <div class="field"><label class="label">Título *</label><input class="input" id="nt-titulo" placeholder="Nombre de la tarea"></div>
+    <div class="field"><label class="label">Descripción</label><textarea class="textarea" id="nt-desc" placeholder="Instrucciones detalladas..."></textarea></div>
+    <div class="field"><label class="label">Fecha límite</label><input class="input" id="nt-fecha" type="date"></div>
+    <button class="btn btn-primary btn-full" onclick="crearTarea()">Asignar tarea</button>
+  </div>
+</div>
+
+<!-- MODAL ESCUELA -->
+<div class="modal-overlay" id="modal-escuela">
+  <div class="modal-box" style="width:400px;">
+    <div class="modal-header"><h2 class="modal-title">Nueva escuela</h2><button class="btn btn-ghost btn-sm" onclick="cerrarModal('modal-escuela')">✕</button></div>
+    <div class="field"><label class="label">Nombre de la escuela *</label><input class="input" id="ne-nombre" placeholder="ITESM, UNAM, UAQ..."></div>
+    <div class="field"><label class="label">Ciudad</label><input class="input" id="ne-ciudad" placeholder="Querétaro"></div>
+    <button class="btn btn-primary btn-full" onclick="crearEscuela()">Registrar escuela</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  ⚙️  CONFIGURACIÓN — CAMBIA ESTOS DOS VALORES
+// ════════════════════════════════════════════════════════
+
+// 1. Pega aquí la URL que te da Google Apps Script al desplegar:
+const BACKEND_URL = "https://script.google.com/macros/u/1/s/AKfycbyYqA1O4LvPLNn8XtpYnv_MSGUVjym-y-MrQx2DsEISVzfBc1O2RR3P_tyEJ1LiB8E/exec";
+
+// 2. Pon la misma contraseña que tienes en Code.gs (ADMIN_PASSWORD):
+const ADMIN_PASSWORD_CLIENT = "admin123";
+
+// ════════════════════════════════════════════════════════
+//  NO MODIFIQUES NADA DEBAJO DE ESTA LÍNEA
+// ════════════════════════════════════════════════════════
+
+const TOKEN_INTERVAL = 30;
+let adminPass="",alumnoActual=null,alumnosCache=[],escuelasCache=[],tareasCache=[],qrInterval=null;
+
+const DEMO={
+  alumnos:[
+    {matricula:"2021001",nombre:"Ana García López",escuela:"ITESM",carrera:"Ing. Sistemas",horasRequeridas:480,horasAcumuladas:312,activo:true,email:"ana@itesm.mx"},
+    {matricula:"2021002",nombre:"Carlos Mendoza",escuela:"UAQ",carrera:"Psicología",horasRequeridas:480,horasAcumuladas:89,activo:true,email:"carlos@uaq.mx"},
+    {matricula:"2021003",nombre:"María Torres",escuela:"ITESM",carrera:"Diseño Industrial",horasRequeridas:240,horasAcumuladas:240,activo:false,email:""},
+    {matricula:"2021004",nombre:"Luis Ramírez",escuela:"UVM",carrera:"Administración",horasRequeridas:480,horasAcumuladas:156,activo:true,email:"luis@uvm.mx"},
+    {matricula:"2021005",nombre:"Sofía Herrera",escuela:"UAQ",carrera:"Trabajo Social",horasRequeridas:480,horasAcumuladas:401,activo:true,email:"sofia@uaq.mx"},
+  ],
+  escuelas:[
+    {id:"ESC1",nombre:"ITESM",ciudad:"Querétaro"},
+    {id:"ESC2",nombre:"UAQ",ciudad:"Querétaro"},
+    {id:"ESC3",nombre:"UVM",ciudad:"Querétaro"},
+  ],
+  tareas:[
+    {id:"T1",matricula:"2021001",titulo:"Reporte mensual de actividades",descripcion:"Elaborar un reporte con las actividades realizadas durante el mes.",fechaAsig:"2024-11-01",fechaLimite:"2024-11-30",estado:"completada",comentario:"Entregado en tiempo."},
+    {id:"T2",matricula:"2021001",titulo:"Apoyo en taller de lectura",descripcion:"Asistir y apoyar en el taller de lectura de los viernes.",fechaAsig:"2024-11-10",fechaLimite:"2024-12-10",estado:"pendiente",comentario:""},
+    {id:"T3",matricula:"2021002",titulo:"Diagnóstico inicial del grupo",descripcion:"Aplicar evaluación diagnóstica al grupo asignado.",fechaAsig:"2024-11-05",fechaLimite:"2024-11-20",estado:"pendiente",comentario:""},
+  ],
+  asistencias:[
+    {fecha:"2024-11-18",entrada:"09:00:00",salida:"13:30:00",horas:"4.50"},
+    {fecha:"2024-11-19",entrada:"09:15:00",salida:"14:00:00",horas:"4.75"},
+    {fecha:"2024-11-20",entrada:"08:55:00",salida:"13:00:00",horas:"4.08"},
+    {fecha:"2024-11-21",entrada:"09:00:00",salida:"",horas:null},
+  ]
+};
+
+function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('view-'+id).classList.add('active');const map={checkin:0,alumno:1,qr:2,admin:3};document.querySelectorAll('.nav-btn')[map[id]].classList.add('active')}
+
+async function api(action,data={}){
+  if(!BACKEND_URL||BACKEND_URL==="TU_URL_DE_APPS_SCRIPT_AQUI")return null;
+  try{const r=await fetch(BACKEND_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,...data})});return await r.json();}
+  catch(e){console.warn("API error:",e);return null;}
+}
+
+function generarTokenLocal(){const v=Math.floor(Date.now()/1000/TOKEN_INTERVAL),raw="SS_"+ADMIN_PASSWORD_CLIENT+"_"+v;let h=0;for(let i=0;i<raw.length;i++){h=Math.imul(31,h)+raw.charCodeAt(i)|0}return Math.abs(h).toString(16).toUpperCase().padStart(8,'0').slice(0,8)}
+function segundosRestantes(){return TOKEN_INTERVAL-(Math.floor(Date.now()/1000)%TOKEN_INTERVAL)}
+
+async function doCheckin(){
+  const m=document.getElementById('ci-matricula').value.trim(),t=document.getElementById('ci-token').value.trim().toUpperCase();
+  if(!m||t.length<6){showToast("Completa todos los campos","error");return}
+  const res=await api("checkin",{matricula:m,token:t});
+  if(res){mostrarResultadoCheckin(res.ok,res.mensaje||res.error,res.tipo);showToast(res.ok?res.mensaje:res.error,res.ok?"success":"error");return}
+  if(t!==generarTokenLocal()){showToast("Código QR inválido o expirado","error");mostrarResultadoCheckin(false,"Código QR inválido. Pide el código actualizado al encargado.");return}
+  const al=DEMO.alumnos.find(a=>a.matricula===m);
+  if(!al){showToast("Matrícula no registrada","error");mostrarResultadoCheckin(false,"Matrícula no encontrada. Habla con tu supervisor.");return}
+  const hora=new Date().toLocaleTimeString('es-MX');
+  mostrarResultadoCheckin(true,"¡Bienvenido, "+al.nombre.split(' ')[0]+"! Entrada registrada a las "+hora+".","entrada");
+  showToast("Asistencia registrada correctamente","success");
+  document.getElementById('ci-matricula').value='';document.getElementById('ci-token').value='';
+}
+
+function mostrarResultadoCheckin(ok,msg,tipo){
+  const d=document.getElementById('checkin-result');d.style.display='block';
+  d.style.background=ok?'var(--accent-bg)':'var(--danger-bg)';
+  d.style.border=ok?'1px solid rgba(46,204,113,0.3)':'1px solid rgba(231,76,60,0.2)';
+  const icon=ok?(tipo==='salida'?'👋':'✅'):'❌';
+  d.innerHTML=`<p style="font-size:22px;text-align:center;margin-bottom:4px;">${icon}</p><p style="font-weight:500;text-align:center;font-size:14px;">${msg}</p>`;
+}
+
+async function loginAlumno(){
+  const m=document.getElementById('al-matricula').value.trim();
+  if(!m){showToast("Ingresa tu matrícula","error");return}
+  const res=await api("getAlumno",{matricula:m});
+  let al,asist,tar;
+  if(res&&res.ok){al=res.alumno;asist=res.asistencias;tar=res.tareas}
+  else{al=DEMO.alumnos.find(a=>a.matricula===m);if(!al){showToast("Matrícula no encontrada","error");return}asist=DEMO.asistencias;tar=DEMO.tareas.filter(t=>t.matricula===m)}
+  alumnoActual=al;renderPerfilAlumno(al,asist,tar);
+}
+
+function renderPerfilAlumno(al,asist,tar){
+  document.getElementById('alumno-login-section').style.display='none';
+  document.getElementById('alumno-profile-section').style.display='block';
+  const ini=al.nombre.split(' ').slice(0,2).map(n=>n[0]).join('');
+  document.getElementById('al-avatar').textContent=ini;
+  document.getElementById('al-nombre').textContent=al.nombre;
+  document.getElementById('al-escuela').textContent=al.escuela;
+  document.getElementById('al-carrera').textContent=al.carrera||'Sin carrera';
+  const st=document.getElementById('al-status');st.textContent=al.activo?'Activo':'Inactivo';st.className='badge '+(al.activo?'badge-green':'badge-gray');
+  const pct=Math.min(100,(al.horasAcumuladas/al.horasRequeridas*100));
+  const rest=Math.max(0,al.horasRequeridas-al.horasAcumuladas);
+  document.getElementById('al-horas-acum').textContent=al.horasAcumuladas.toFixed(1);
+  document.getElementById('al-horas-req').textContent=al.horasRequeridas;
+  document.getElementById('al-horas-falt').textContent=rest.toFixed(1);
+  const fill=document.getElementById('al-progress');fill.style.width=pct.toFixed(1)+'%';
+  fill.className='progress-fill'+(pct<30?' danger':pct<60?' warn':'');
+  document.getElementById('al-progress-text').textContent=pct.toFixed(1)+'% completado';
+  const al2=document.getElementById('al-asistencias-list');
+  al2.innerHTML=!asist||!asist.length?'<div class="empty">Sin asistencias registradas todavía</div>':`<table style="width:100%"><thead><tr><th>Fecha</th><th>Entrada</th><th>Salida</th><th>Horas</th></tr></thead><tbody>${asist.map(a=>`<tr><td>${formatFecha(a.fecha)}</td><td>${a.entrada}</td><td>${a.salida||'<span class="badge badge-warn">En curso</span>'}</td><td>${a.horas?a.horas+' h':'—'}</td></tr>`).join('')}</tbody></table>`;
+  const tl=document.getElementById('al-tareas-list');
+  tl.innerHTML=!tar||!tar.length?'<div class="card"><div class="empty">Sin tareas asignadas</div></div>':tar.map(t=>`<div class="tarea-card"><div class="tarea-check ${t.estado==='completada'?'done':''}" onclick="toggleTareaAlumno('${t.id}',this)">${t.estado==='completada'?'✓':''}</div><div style="flex:1;"><p style="font-weight:500;font-size:14px;${t.estado==='completada'?'text-decoration:line-through;color:var(--ink-muted);':''}">${t.titulo}</p>${t.descripcion?`<p style="font-size:13px;color:var(--ink-muted);margin:4px 0;">${t.descripcion}</p>`:''} ${t.fechaLimite?`<p style="font-size:12px;color:var(--ink-muted);">📅 Entrega: ${formatFecha(t.fechaLimite)}</p>`:''}</div><span class="badge ${t.estado==='completada'?'badge-green':'badge-warn'}">${t.estado}</span></div>`).join('');
+}
+
+function toggleTareaAlumno(id,el){
+  const t=DEMO.tareas.find(x=>x.id===id);
+  if(t&&t.estado!=='completada'){t.estado='completada';el.classList.add('done');el.innerHTML='✓';const c=el.closest('.tarea-card');c.querySelector('p').style.textDecoration='line-through';c.querySelector('.badge').className='badge badge-green';c.querySelector('.badge').textContent='completada';showToast("Tarea marcada como completada","success");api("completarTarea",{id,comentario:""})}
+}
+
+function cerrarSesionAlumno(){alumnoActual=null;document.getElementById('alumno-login-section').style.display='block';document.getElementById('alumno-profile-section').style.display='none';document.getElementById('al-matricula').value=''}
+function switchAlTab(tab,btn){document.querySelectorAll('#view-alumno .tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');document.getElementById('al-tab-asistencias').style.display=tab==='asistencias'?'block':'none';document.getElementById('al-tab-tareas').style.display=tab==='tareas'?'block':'none'}
+
+function verificarAdminQR(){
+  const p=document.getElementById('qr-pass').value;
+  if(p!==ADMIN_PASSWORD_CLIENT){showToast("Contraseña incorrecta","error");return}
+  document.getElementById('qr-admin-gate').style.display='none';document.getElementById('qr-pantalla').style.display='block';iniciarQR();
+}
+function cerrarQR(){if(qrInterval)clearInterval(qrInterval);document.getElementById('qr-admin-gate').style.display='block';document.getElementById('qr-pantalla').style.display='none';document.getElementById('qr-pass').value=''}
+
+function iniciarQR(){regenerarQR();qrInterval=setInterval(()=>{const s=segundosRestantes(),pct=s/TOKEN_INTERVAL*100;document.getElementById('qr-seconds').textContent=s;const f=document.getElementById('qr-timer-fill');f.style.width=pct+'%';f.className='timer-fill'+(s<=7?' urgent':'');if(s===TOKEN_INTERVAL)regenerarQR()},1000)}
+
+function regenerarQR(){
+  const token=generarTokenLocal();
+  document.getElementById('qr-token-display').textContent=token;
+  const canvas=document.getElementById('qr-canvas');canvas.innerHTML='';
+  if(typeof QRCode!=='undefined'){new QRCode(canvas,{text:'checkin:'+token,width:200,height:200,colorDark:'#1a1a2e',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.H})}
+  else{canvas.innerHTML='<div style="width:200px;height:200px;background:var(--surface);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--ink-muted);">Usa los 8 caracteres de arriba</div>'}
+}
+
+async function loginAdmin(){
+  const p=document.getElementById('adm-pass').value;
+  const res=await api("adminLogin",{password:p});
+  const ok=res?res.ok:p===ADMIN_PASSWORD_CLIENT;
+  if(!ok){showToast("Contraseña incorrecta","error");return}
+  adminPass=p;document.getElementById('admin-login-section').style.display='none';document.getElementById('admin-panel-section').style.display='block';await cargarDatosAdmin();
+}
+
+async function cargarDatosAdmin(){
+  const rA=await api("getAlumnos",{adminPass});alumnosCache=rA?rA.alumnos:[...DEMO.alumnos];
+  const rE=await api("getEscuelas");escuelasCache=rE?rE.escuelas:[...DEMO.escuelas];
+  const rT=await api("getTareas",{adminPass});tareasCache=rT?rT.tareas:[...DEMO.tareas];
+  const activos=alumnosCache.filter(a=>a.activo).length;
+  const totalH=alumnosCache.reduce((s,a)=>s+(parseFloat(a.horasAcumuladas)||0),0);
+  document.getElementById('adm-total-alumnos').textContent=activos;
+  document.getElementById('adm-total-horas').textContent=totalH.toFixed(0);
+  document.getElementById('adm-asist-hoy').textContent=3;
+  document.getElementById('adm-escuelas').textContent=escuelasCache.length;
+  document.getElementById('adm-por-escuela').innerHTML=escuelasCache.map(e=>{const als=alumnosCache.filter(a=>a.escuela===e.nombre),hrs=als.reduce((s,a)=>s+(parseFloat(a.horasAcumuladas)||0),0);return`<div class="escuela-row"><div><p style="font-weight:500;font-size:14px;">${e.nombre}</p><p style="font-size:12px;color:var(--ink-muted);">${als.length} alumnos · ${e.ciudad||'Sin ciudad'}</p></div><p style="font-weight:600;color:var(--accent);">${hrs.toFixed(0)} hrs</p></div>`}).join('')||'<div class="empty">Sin escuelas</div>';
+  document.getElementById('adm-ultimas-asist').innerHTML=[{nombre:"Ana García",hora:"09:00",tipo:"entrada"},{nombre:"Sofía Herrera",hora:"08:50",tipo:"entrada"},{nombre:"Luis Ramírez",hora:"08:45",tipo:"entrada"},{nombre:"Ana García",hora:"13:30",tipo:"salida"}].map(a=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);"><div><p style="font-size:13px;font-weight:500;">${a.nombre}</p><p style="font-size:12px;color:var(--ink-muted);">${a.hora}</p></div><span class="badge ${a.tipo==='entrada'?'badge-green':'badge-blue'}">${a.tipo}</span></div>`).join('');
+  const escOpts=escuelasCache.map(e=>`<option value="${e.nombre}">${e.nombre}</option>`).join('');
+  document.getElementById('adm-filtro-escuela').innerHTML='<option value="">Todas las escuelas</option>'+escOpts;
+  document.getElementById('nm-escuela').innerHTML=escOpts||'<option>Primero crea una escuela</option>';
+  document.getElementById('nt-alumno').innerHTML=alumnosCache.map(a=>`<option value="${a.matricula}">${a.nombre}</option>`).join('');
+  renderTablaAlumnos(alumnosCache);renderTareasAdmin();renderEscuelasAdmin();
+}
+
+function cerrarSesionAdmin(){adminPass="";document.getElementById('admin-login-section').style.display='block';document.getElementById('admin-panel-section').style.display='none';document.getElementById('adm-pass').value=''}
+
+function filtrarAlumnos(){const q=document.getElementById('adm-buscar').value.toLowerCase(),e=document.getElementById('adm-filtro-escuela').value;let r=[...alumnosCache];if(q)r=r.filter(a=>a.nombre.toLowerCase().includes(q)||String(a.matricula).includes(q));if(e)r=r.filter(a=>a.escuela===e);renderTablaAlumnos(r)}
+
+function renderTablaAlumnos(als){
+  const tb=document.getElementById('adm-alumnos-tbody');
+  if(!als.length){tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--ink-muted);padding:32px;">Sin resultados</td></tr>';return}
+  tb.innerHTML=als.map(a=>{const pct=Math.min(100,(a.horasAcumuladas/a.horasRequeridas*100)).toFixed(0),ini=a.nombre.split(' ').slice(0,2).map(n=>n[0]).join('');return`<tr><td><div style="display:flex;align-items:center;gap:10px;"><div style="width:32px;height:32px;border-radius:50%;background:var(--accent-bg);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--accent-dark);flex-shrink:0;">${ini}</div><div><p style="font-weight:500;font-size:13px;">${a.nombre}</p><p style="font-size:11px;color:var(--ink-muted);">${a.matricula}</p></div></div></td><td><span class="badge badge-gray">${a.escuela}</span></td><td style="min-width:120px;"><div style="display:flex;align-items:center;gap:8px;"><div class="progress-bar" style="flex:1;"><div class="progress-fill" style="width:${pct}%"></div></div><span style="font-size:12px;color:var(--ink-muted);">${pct}%</span></div></td><td style="font-size:13px;">${parseFloat(a.horasAcumuladas).toFixed(0)}/${a.horasRequeridas}</td><td><span class="badge ${a.activo?'badge-green':'badge-gray'}">${a.activo?'Activo':'Inactivo'}</span></td><td><button class="btn btn-ghost btn-sm" onclick="verDetalleAlumno('${a.matricula}')">Ver</button></td></tr>`}).join('');
+}
+
+function verDetalleAlumno(m){showToast("Abriendo perfil...","");showView('alumno');document.getElementById('al-matricula').value=m;setTimeout(loginAlumno,300)}
+
+function renderTareasAdmin(){
+  const list=document.getElementById('adm-tareas-list');
+  if(!tareasCache.length){list.innerHTML='<div class="card"><div class="empty">Sin tareas asignadas. Crea la primera con el botón de arriba.</div></div>';return}
+  list.innerHTML=tareasCache.map(t=>{const al=alumnosCache.find(a=>a.matricula===t.matricula);return`<div class="card card-sm" style="margin-bottom:10px;"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;"><div style="flex:1;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;"><p style="font-weight:500;font-size:14px;">${t.titulo}</p><span class="badge ${t.estado==='completada'?'badge-green':'badge-warn'}">${t.estado}</span></div>${t.descripcion?`<p style="font-size:13px;color:var(--ink-muted);margin-bottom:6px;">${t.descripcion}</p>`:''}<p style="font-size:12px;color:var(--ink-light);">👤 ${al?al.nombre:t.matricula}${t.fechaLimite?' · 📅 '+formatFecha(t.fechaLimite):''}</p>${t.comentario?`<p style="font-size:12px;color:var(--accent-dark);margin-top:4px;">💬 ${t.comentario}</p>`:''}</div></div></div>`}).join('');
+}
+
+function renderEscuelasAdmin(){
+  const list=document.getElementById('adm-escuelas-list');
+  if(!escuelasCache.length){list.innerHTML='<div class="empty">Sin escuelas registradas. Añade la primera.</div>';return}
+  list.innerHTML=escuelasCache.map(e=>{const cnt=alumnosCache.filter(a=>a.escuela===e.nombre).length;return`<div class="escuela-row"><div><p style="font-weight:500;">${e.nombre}</p><p style="font-size:13px;color:var(--ink-muted);">${e.ciudad||'Sin ciudad'}</p></div><span class="badge badge-blue">${cnt} alumno${cnt!==1?'s':''}</span></div>`}).join('');
+}
+
+function switchAdminTab(tab,btn){document.querySelectorAll('#view-admin .tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');['resumen','alumnos','tareas','escuelas'].forEach(t=>{const el=document.getElementById('adm-tab-'+t);if(el)el.style.display=t===tab?'block':'none'})}
+
+function mostrarModal(id){document.getElementById(id).style.display='flex'}
+function cerrarModal(id){document.getElementById(id).style.display='none'}
+
+async function crearAlumno(){
+  const m=document.getElementById('nm-matricula').value.trim(),n=document.getElementById('nm-nombre').value.trim(),e=document.getElementById('nm-escuela').value;
+  if(!m||!n||!e){showToast("Completa los campos obligatorios (*)","error");return}
+  const al={matricula:m,nombre:n,escuela:e,carrera:document.getElementById('nm-carrera').value,horasRequeridas:parseInt(document.getElementById('nm-horas').value)||480,email:document.getElementById('nm-email').value,fechaFin:document.getElementById('nm-fechafin').value};
+  const res=await api("crearAlumno",{adminPass,alumno:al});
+  if(!res){if(alumnosCache.find(a=>a.matricula===m)){showToast("Esa matrícula ya existe","error");return}alumnosCache.push({...al,horasAcumuladas:0,activo:true});DEMO.alumnos.push({...al,horasAcumuladas:0,activo:true})}
+  else if(!res.ok){showToast(res.error,"error");return}
+  renderTablaAlumnos(alumnosCache);document.getElementById('nt-alumno').innerHTML=alumnosCache.map(a=>`<option value="${a.matricula}">${a.nombre}</option>`).join('');
+  cerrarModal('modal-alumno');showToast("Alumno registrado correctamente","success");
+  ['nm-matricula','nm-nombre','nm-carrera','nm-email'].forEach(id=>document.getElementById(id).value='');document.getElementById('nm-horas').value='480';
+}
+
+async function crearTarea(){
+  const m=document.getElementById('nt-alumno').value,t=document.getElementById('nt-titulo').value.trim();
+  if(!m||!t){showToast("Selecciona un alumno y escribe el título","error");return}
+  const ta={matricula:m,titulo:t,descripcion:document.getElementById('nt-desc').value,fechaLimite:document.getElementById('nt-fecha').value};
+  const res=await api("crearTarea",{adminPass,tarea:ta});
+  const nueva={id:'T'+Date.now(),...ta,fechaAsig:new Date().toISOString().slice(0,10),estado:'pendiente',comentario:''};
+  if(!res){tareasCache.push(nueva);DEMO.tareas.push(nueva)}else if(!res.ok){showToast(res.error,"error");return}
+  renderTareasAdmin();cerrarModal('modal-tarea');showToast("Tarea asignada correctamente","success");
+  ['nt-titulo','nt-desc','nt-fecha'].forEach(id=>document.getElementById(id).value='');
+}
+
+async function crearEscuela(){
+  const n=document.getElementById('ne-nombre').value.trim();
+  if(!n){showToast("Ingresa el nombre de la escuela","error");return}
+  const esc={nombre:n,ciudad:document.getElementById('ne-ciudad').value};
+  const res=await api("crearEscuela",{adminPass,escuela:esc});
+  const nueva={id:'ESC'+Date.now(),...esc};
+  if(!res){escuelasCache.push(nueva);DEMO.escuelas.push(nueva)}else if(!res.ok){showToast(res.error,"error");return}
+  renderEscuelasAdmin();
+  const o=escuelasCache.map(e=>`<option value="${e.nombre}">${e.nombre}</option>`).join('');
+  document.getElementById('adm-filtro-escuela').innerHTML='<option value="">Todas las escuelas</option>'+o;
+  document.getElementById('nm-escuela').innerHTML=o;
+  cerrarModal('modal-escuela');showToast("Escuela registrada correctamente","success");
+  document.getElementById('ne-nombre').value='';document.getElementById('ne-ciudad').value='';
+}
+
+function showToast(msg,type=""){const t=document.getElementById('toast');t.textContent=msg;t.className='show '+type;setTimeout(()=>t.className='',3500)}
+function formatFecha(f){if(!f)return'';try{const d=new Date(f+'T12:00:00');return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'})}catch{return f}}
+
+document.querySelectorAll('.modal-overlay').forEach(m=>{m.addEventListener('click',e=>{if(e.target===m)m.style.display='none'})});
+</script>
+</body>
+</html>
