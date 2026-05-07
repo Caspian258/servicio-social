@@ -327,7 +327,7 @@ tr:hover td{background:var(--surface)}
 // ════════════════════════════════════════════════════════
 
 // 1. Pega aquí la URL que te da Google Apps Script al desplegar:
-const BACKEND_URL = "https://script.google.com/macros/s/AKfycbyLo-RNTd5y8NZ8vR4_QXDnRi5sgcGk4_aIlFzf0GvRJG_UC9Esu4eg4z0g_TtW3kDM/exec";
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxQtWtuEpRfR1wcnjUcJgKTW-h_WWfDRGxFKqLFE_bHoDFCk-PNcBJT7su9CfiGJHBa/exec";
 
 // 2. Pon la misma contraseña que tienes en Code.gs (ADMIN_PASSWORD):
 const ADMIN_PASSWORD_CLIENT = "admin123";
@@ -348,10 +348,26 @@ const DEMO = {
 
 function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('view-'+id).classList.add('active');const map={checkin:0,alumno:1,qr:2,admin:3};document.querySelectorAll('.nav-btn')[map[id]].classList.add('active')}
 
-async function api(action,data={}){
-  if(!BACKEND_URL||BACKEND_URL==="TU_URL_DE_APPS_SCRIPT_AQUI")return null;
-  try{const r=await fetch(BACKEND_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,...data})});return await r.json();}
-  catch(e){console.warn("API error:",e);return null;}
+async function api(action, data = {}) {
+  if (!BACKEND_URL || BACKEND_URL === "https://script.google.com/macros/s/AKfycbxQtWtuEpRfR1wcnjUcJgKTW-h_WWfDRGxFKqLFE_bHoDFCk-PNcBJT7su9CfiGJHBa/exec") return null;
+  return new Promise((resolve) => {
+    const callbackName = 'cb_' + Date.now();
+    const params = new URLSearchParams({
+      action,
+      data: JSON.stringify(data),
+      callback: callbackName
+    });
+    const script = document.createElement('script');
+    script.src = BACKEND_URL + '?' + params.toString();
+    window[callbackName] = (result) => {
+      delete window[callbackName];
+      document.body.removeChild(script);
+      resolve(result);
+    };
+    script.onerror = () => { resolve(null); };
+    document.body.appendChild(script);
+    setTimeout(() => resolve(null), 8000);
+  });
 }
 
 function generarTokenLocal(){const v=Math.floor(Date.now()/1000/TOKEN_INTERVAL),raw="SS_"+ADMIN_PASSWORD_CLIENT+"_"+v;let h=0;for(let i=0;i<raw.length;i++){h=Math.imul(31,h)+raw.charCodeAt(i)|0}return Math.abs(h).toString(16).toUpperCase().padStart(8,'0').slice(0,8)}
