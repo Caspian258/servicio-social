@@ -456,10 +456,10 @@ async function cargarDatosAdmin(){
   const totalH=alumnosCache.reduce((s,a)=>s+(parseFloat(a.horasAcumuladas)||0),0);
   document.getElementById('adm-total-alumnos').textContent=activos;
   document.getElementById('adm-total-horas').textContent=totalH.toFixed(0);
-  document.getElementById('adm-asist-hoy').textContent=3;
+  document.getElementById('adm-asist-hoy').textContent=0;
   document.getElementById('adm-escuelas').textContent=escuelasCache.length;
   document.getElementById('adm-por-escuela').innerHTML=escuelasCache.map(e=>{const als=alumnosCache.filter(a=>a.escuela===e.nombre),hrs=als.reduce((s,a)=>s+(parseFloat(a.horasAcumuladas)||0),0);return`<div class="escuela-row"><div><p style="font-weight:500;font-size:14px;">${e.nombre}</p><p style="font-size:12px;color:var(--ink-muted);">${als.length} alumnos · ${e.ciudad||'Sin ciudad'}</p></div><p style="font-weight:600;color:var(--accent);">${hrs.toFixed(0)} hrs</p></div>`}).join('')||'<div class="empty">Sin escuelas</div>';
-  document.getElementById('adm-ultimas-asist').innerHTML=[{nombre:"Ana García",hora:"09:00",tipo:"entrada"},{nombre:"Sofía Herrera",hora:"08:50",tipo:"entrada"},{nombre:"Luis Ramírez",hora:"08:45",tipo:"entrada"},{nombre:"Ana García",hora:"13:30",tipo:"salida"}].map(a=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);"><div><p style="font-size:13px;font-weight:500;">${a.nombre}</p><p style="font-size:12px;color:var(--ink-muted);">${a.hora}</p></div><span class="badge ${a.tipo==='entrada'?'badge-green':'badge-blue'}">${a.tipo}</span></div>`).join('');
+  document.getElementById('adm-ultimas-asist').innerHTML='<div class="empty">Sin asistencias recientes</div>';
   const escOpts=escuelasCache.map(e=>`<option value="${e.nombre}">${e.nombre}</option>`).join('');
   document.getElementById('adm-filtro-escuela').innerHTML='<option value="">Todas las escuelas</option>'+escOpts;
   document.getElementById('nm-escuela').innerHTML=escOpts||'<option>Primero crea una escuela</option>';
