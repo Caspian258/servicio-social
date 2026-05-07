@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--ink:#1a1a2e;--ink-light:#4a4a6a;--ink-muted:#8888aa;--surface:#f7f6f2;--card:#ffffff;--accent:#2ecc71;--accent-dark:#1da055;--accent-bg:#e8faf1;--warn:#f39c12;--warn-bg:#fef9ee;--danger:#e74c3c;--danger-bg:#fef0ee;--info:#3498db;--info-bg:#eef6fd;--border:rgba(26,26,46,0.1);--radius:12px;--radius-sm:8px}
@@ -224,7 +226,10 @@ tr:hover td{background:var(--surface)}
         <h1 class="page-title">Panel del Encargado</h1>
         <p class="page-sub" style="margin-bottom:0;">Vista general del programa de servicio social</p>
       </div>
-      <button class="btn btn-ghost btn-sm" onclick="cerrarSesionAdmin()">Cerrar sesión</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="generarReportePDF()">⬇ Exportar PDF</button>
+        <button class="btn btn-ghost btn-sm" onclick="cerrarSesionAdmin()">Cerrar sesión</button>
+      </div>
     </div>
     <div class="tabs">
       <button class="tab active" onclick="switchAdminTab('resumen',this)">Resumen</button>
@@ -542,6 +547,166 @@ async function crearEscuela(){
 
 function showToast(msg,type=""){const t=document.getElementById('toast');t.textContent=msg;t.className='show '+type;setTimeout(()=>t.className='',3500)}
 function formatFecha(f){if(!f)return'';try{const d=new Date(f+'T12:00:00');return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'})}catch{return f}}
+
+
+async function generarReportePDF(){
+  showToast("Generando reporte...","");
+  
+  // Obtener datos frescos del backend
+  const rA=await api("getAlumnos",{adminPass});
+  const rE=await api("getEscuelas");
+  const rAs=await api("getAsistencias",{adminPass});
+  
+  const alumnos=(rA&&rA.ok)?rA.alumnos:alumnosCache;
+  const escuelas=(rE&&rE.ok)?rE.escuelas:escuelasCache;
+  const asistencias=(rAs&&rAs.ok)?rAs.asistencias:[];
+  
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210,mg=15;
+  let y=mg;
+  
+  const verde=[46,204,113];
+  const oscuro=[26,26,46];
+  const gris=[100,100,120];
+  const claro=[247,246,242];
+  const fecha=new Date().toLocaleDateString('es-MX',{day:'2-digit',month:'long',year:'numeric'});
+  
+  // ── ENCABEZADO ──
+  doc.setFillColor(...oscuro);
+  doc.rect(0,0,W,28,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(18);doc.setFont('helvetica','bold');
+  doc.text('Reporte de Servicio Social',mg,12);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');
+  doc.setTextColor(...verde);
+  doc.text('Hambre Cero — Sistema de Asistencia',mg,19);
+  doc.setTextColor(180,180,200);
+  doc.text('Generado: '+fecha,W-mg,19,{align:'right'});
+  y=36;
+  
+  // ── RESUMEN GENERAL ──
+  const activos=alumnos.filter(a=>a.activo).length;
+  const totalHoras=alumnos.reduce((s,a)=>s+(parseFloat(a.horasAcumuladas)||0),0);
+  const hoy=new Date().toISOString().slice(0,10);
+  const asistHoy=asistencias.filter(a=>a.fecha===hoy).length;
+  
+  doc.setFillColor(...claro);
+  doc.roundedRect(mg,y,W-mg*2,22,3,3,'F');
+  const stats=[
+    {label:'Alumnos activos',val:activos},
+    {label:'Horas acumuladas',val:totalHoras.toFixed(0)+' hrs'},
+    {label:'Escuelas',val:escuelas.length},
+    {label:'Check-ins hoy',val:asistHoy},
+  ];
+  const cw=(W-mg*2)/4;
+  stats.forEach((s,i)=>{
+    const cx=mg+cw*i+cw/2;
+    doc.setFontSize(16);doc.setFont('helvetica','bold');
+    doc.setTextColor(...oscuro);
+    doc.text(String(s.val),cx,y+10,{align:'center'});
+    doc.setFontSize(7);doc.setFont('helvetica','normal');
+    doc.setTextColor(...gris);
+    doc.text(s.label.toUpperCase(),cx,y+17,{align:'center'});
+  });
+  y+=28;
+  
+  // ── POR ESCUELA ──
+  doc.setFontSize(11);doc.setFont('helvetica','bold');
+  doc.setTextColor(...oscuro);
+  doc.text('Progreso por escuela',mg,y);
+  doc.setDrawColor(...verde);doc.setLineWidth(0.5);
+  doc.line(mg,y+2,mg+50,y+2);
+  y+=7;
+  
+  escuelas.forEach(e=>{
+    const als=alumnos.filter(a=>a.escuela===e.nombre);
+    const hrs=als.reduce((s,a)=>s+(parseFloat(a.horasAcumuladas)||0),0);
+    const hrsReq=als.reduce((s,a)=>s+(parseFloat(a.horasRequeridas)||480),0);
+    const pct=hrsReq>0?Math.min(100,hrs/hrsReq*100):0;
+    const barW=W-mg*2-50;
+    
+    doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(...oscuro);
+    doc.text(e.nombre,mg,y+4);
+    doc.setFont('helvetica','normal');doc.setTextColor(...gris);
+    doc.setFontSize(8);
+    doc.text(als.length+' alumnos · '+e.ciudad,mg,y+9);
+    
+    // barra de progreso
+    doc.setFillColor(220,220,230);
+    doc.roundedRect(mg+45,y+1,barW,5,2,2,'F');
+    if(pct>0){
+      doc.setFillColor(...verde);
+      doc.roundedRect(mg+45,y+1,barW*pct/100,5,2,2,'F');
+    }
+    doc.setFontSize(8);doc.setTextColor(...oscuro);
+    doc.text(hrs.toFixed(0)+' hrs ('+pct.toFixed(0)+'%)',W-mg,y+5,{align:'right'});
+    y+=14;
+  });
+  y+=4;
+  
+  // ── TABLA DE ALUMNOS ──
+  doc.setFontSize(11);doc.setFont('helvetica','bold');
+  doc.setTextColor(...oscuro);
+  doc.text('Detalle por alumno',mg,y);
+  doc.setDrawColor(...verde);doc.line(mg,y+2,mg+45,y+2);
+  y+=5;
+  
+  const rows=alumnos.map(a=>{
+    const pct=Math.min(100,(a.horasAcumuladas/(a.horasRequeridas||480)*100));
+    const asistAl=asistencias.filter(x=>String(x.matricula)===String(a.matricula));
+    return[
+      a.nombre,
+      String(a.matricula),
+      a.escuela,
+      (parseFloat(a.horasAcumuladas)||0).toFixed(1)+'/'+a.horasRequeridas,
+      pct.toFixed(0)+'%',
+      asistAl.length+' días',
+      a.activo?'Activo':'Inactivo'
+    ];
+  });
+  
+  doc.autoTable({
+    startY:y,
+    head:[['Nombre','Matrícula','Escuela','Horas','Avance','Asistencias','Estado']],
+    body:rows,
+    theme:'grid',
+    headStyles:{fillColor:oscuro,textColor:[255,255,255],fontSize:8,fontStyle:'bold'},
+    bodyStyles:{fontSize:8,textColor:oscuro},
+    alternateRowStyles:{fillColor:claro},
+    columnStyles:{
+      0:{cellWidth:40},
+      1:{cellWidth:22},
+      2:{cellWidth:22},
+      3:{cellWidth:22},
+      4:{cellWidth:16},
+      5:{cellWidth:20},
+      6:{cellWidth:18},
+    },
+    margin:{left:mg,right:mg},
+    didParseCell:(d)=>{
+      if(d.section==='body'&&d.column.index===6){
+        d.cell.styles.textColor=d.cell.raw==='Activo'?[29,160,85]:[150,150,170];
+        d.cell.styles.fontStyle='bold';
+      }
+    }
+  });
+  
+  // ── PIE DE PÁGINA ──
+  const pages=doc.internal.getNumberOfPages();
+  for(let i=1;i<=pages;i++){
+    doc.setPage(i);
+    doc.setFillColor(...oscuro);
+    doc.rect(0,287,W,10,'F');
+    doc.setFontSize(7);doc.setTextColor(150,150,180);
+    doc.text('Sistema de Servicio Social — Hambre Cero',mg,293);
+    doc.text('Página '+i+' de '+pages,W-mg,293,{align:'right'});
+  }
+  
+  const nombreArchivo='reporte-servicio-social-'+new Date().toISOString().slice(0,10)+'.pdf';
+  doc.save(nombreArchivo);
+  showToast("Reporte descargado correctamente","success");
+}
 
 document.querySelectorAll('.modal-overlay').forEach(m=>{m.addEventListener('click',e=>{if(e.target===m)m.style.display='none'})});
 </script>
