@@ -327,7 +327,7 @@ tr:hover td{background:var(--surface)}
 // ════════════════════════════════════════════════════════
 
 // 1. Pega aquí la URL que te da Google Apps Script al desplegar:
-const BACKEND_URL = "TU_URL_DE_APPS_SCRIPT_AQUI";
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycbzvaThxuXKUtpVwlfp95wAKtGJc7XEsGNG8Xkx2SwmLBDgf5C7ugR5zXsY1gJsg9PfI/exec";
 
 // 2. Pon la misma contraseña que tienes en Code.gs (ADMIN_PASSWORD):
 const ADMIN_PASSWORD_CLIENT = "admin123";
@@ -339,36 +339,12 @@ const ADMIN_PASSWORD_CLIENT = "admin123";
 const TOKEN_INTERVAL = 30;
 let adminPass="",alumnoActual=null,alumnosCache=[],escuelasCache=[],tareasCache=[],qrInterval=null;
 
-const DEMO={
-  alumnos:[
-    {matricula:"2021001",nombre:"Ana García López",escuela:"ITESM",carrera:"Ing. Sistemas",horasRequeridas:480,horasAcumuladas:312,activo:true,email:"ana@itesm.mx"},
-    {matricula:"2021002",nombre:"Carlos Mendoza",escuela:"UAQ",carrera:"Psicología",horasRequeridas:480,horasAcumuladas:89,activo:true,email:"carlos@uaq.mx"},
-    {matricula:"2021003",nombre:"María Torres",escuela:"ITESM",carrera:"Diseño Industrial",horasRequeridas:240,horasAcumuladas:240,activo:false,email:""},
-    {matricula:"2021004",nombre:"Luis Ramírez",escuela:"UVM",carrera:"Administración",horasRequeridas:480,horasAcumuladas:156,activo:true,email:"luis@uvm.mx"},
-    {matricula:"2021005",nombre:"Sofía Herrera",escuela:"UAQ",carrera:"Trabajo Social",horasRequeridas:480,horasAcumuladas:401,activo:true,email:"sofia@uaq.mx"},
-  ],
-  escuelas:[
-    {id:"ESC1",nombre:"ITESM",ciudad:"Querétaro"},
-    {id:"ESC2",nombre:"UAQ",ciudad:"Querétaro"},
-    {id:"ESC3",nombre:"UVM",ciudad:"Querétaro"},
-  ],
-  tareas:[
-    {id:"T1",matricula:"2021001",titulo:"Reporte mensual de actividades",descripcion:"Elaborar un reporte con las actividades realizadas durante el mes.",fechaAsig:"2024-11-01",fechaLimite:"2024-11-30",estado:"completada",comentario:"Entregado en tiempo."},
-    {id:"T2",matricula:"2021001",titulo:"Apoyo en taller de lectura",descripcion:"Asistir y apoyar en el taller de lectura de los viernes.",fechaAsig:"2024-11-10",fechaLimite:"2024-12-10",estado:"pendiente",comentario:""},
-    {id:"T3",matricula:"2021002",titulo:"Diagnóstico inicial del grupo",descripcion:"Aplicar evaluación diagnóstica al grupo asignado.",fechaAsig:"2024-11-05",fechaLimite:"2024-11-20",estado:"pendiente",comentario:""},
-  ],
-  asistencias:[
-    {fecha:"2024-11-18",entrada:"09:00:00",salida:"13:30:00",horas:"4.50"},
-    {fecha:"2024-11-19",entrada:"09:15:00",salida:"14:00:00",horas:"4.75"},
-    {fecha:"2024-11-20",entrada:"08:55:00",salida:"13:00:00",horas:"4.08"},
-    {fecha:"2024-11-21",entrada:"09:00:00",salida:"",horas:null},
-  ]
-};
+const DEMO={alumnos:[],escuelas:[],tareas:[],asistencias:[]};
 
 function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('view-'+id).classList.add('active');const map={checkin:0,alumno:1,qr:2,admin:3};document.querySelectorAll('.nav-btn')[map[id]].classList.add('active')}
 
 async function api(action,data={}){
-  if(!BACKEND_URL||BACKEND_URL==="TU_URL_AQUI")return null;
+  if(!BACKEND_URL)return null;
   return new Promise((resolve)=>{
     const cb='cb_'+Date.now();
     const params=new URLSearchParams({action,data:JSON.stringify(data),callback:cb});
