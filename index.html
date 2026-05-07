@@ -327,7 +327,7 @@ tr:hover td{background:var(--surface)}
 // ════════════════════════════════════════════════════════
 
 // 1. Pega aquí la URL que te da Google Apps Script al desplegar:
-const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxQtWtuEpRfR1wcnjUcJgKTW-h_WWfDRGxFKqLFE_bHoDFCk-PNcBJT7su9CfiGJHBa/exec";
+const BACKEND_URL = "https://script.google.com/macros/s/AKfycbxxi8YQk7bxyWg7gvzfQibLgmDzEwHS6pyA5_-tVLK6UpYPzIMhqcySFgT-rYOhA7uZ/exec";
 
 // 2. Pon la misma contraseña que tienes en Code.gs (ADMIN_PASSWORD):
 const ADMIN_PASSWORD_CLIENT = "admin123";
@@ -349,7 +349,7 @@ const DEMO = {
 function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('view-'+id).classList.add('active');const map={checkin:0,alumno:1,qr:2,admin:3};document.querySelectorAll('.nav-btn')[map[id]].classList.add('active')}
 
 async function api(action, data = {}) {
-  if (!BACKEND_URL || BACKEND_URL === "TU_URL_DE_APPS_SCRIPT_AQUI") return null;
+  if (!BACKEND_URL || BACKEND_URL === "https://script.google.com/macros/s/AKfycbxxi8YQk7bxyWg7gvzfQibLgmDzEwHS6pyA5_-tVLK6UpYPzIMhqcySFgT-rYOhA7uZ/exec") return null;
   return new Promise((resolve) => {
     const callbackName = 'cb_' + Date.now();
     const params = new URLSearchParams({
