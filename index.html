@@ -449,9 +449,9 @@ async function loginAdmin(){
 }
 
 async function cargarDatosAdmin(){
-  const rA=await api("getAlumnos",{adminPass});alumnosCache=rA?rA.alumnos:[...DEMO.alumnos];
-  const rE=await api("getEscuelas");escuelasCache=rE?rE.escuelas:[...DEMO.escuelas];
-  const rT=await api("getTareas",{adminPass});tareasCache=rT?rT.tareas:[...DEMO.tareas];
+  const rA=await api("getAlumnos",{adminPass});alumnosCache=(rA&&rA.ok)?rA.alumnos:[];
+  const rE=await api("getEscuelas");escuelasCache=(rE&&rE.ok)?rE.escuelas:[];
+  const rT=await api("getTareas",{adminPass});tareasCache=(rT&&rT.ok)?rT.tareas:[];
   const activos=alumnosCache.filter(a=>a.activo).length;
   const totalH=alumnosCache.reduce((s,a)=>s+(parseFloat(a.horasAcumuladas)||0),0);
   document.getElementById('adm-total-alumnos').textContent=activos;
@@ -503,6 +503,9 @@ async function crearAlumno(){
   const res=await api("crearAlumno",{adminPass,alumno:al});
   if(!res){if(alumnosCache.find(a=>a.matricula===m)){showToast("Esa matrícula ya existe","error");return}alumnosCache.push({...al,horasAcumuladas:0,activo:true});DEMO.alumnos.push({...al,horasAcumuladas:0,activo:true})}
   else if(!res.ok){showToast(res.error,"error");return}
+  // Recargar alumnos desde backend
+  const rA2=await api("getAlumnos",{adminPass});
+  if(rA2&&rA2.ok) alumnosCache=rA2.alumnos;
   renderTablaAlumnos(alumnosCache);document.getElementById('nt-alumno').innerHTML=alumnosCache.map(a=>`<option value="${a.matricula}">${a.nombre}</option>`).join('');
   cerrarModal('modal-alumno');showToast("Alumno registrado correctamente","success");
   ['nm-matricula','nm-nombre','nm-carrera','nm-email'].forEach(id=>document.getElementById(id).value='');document.getElementById('nm-horas').value='480';
@@ -526,6 +529,9 @@ async function crearEscuela(){
   const res=await api("crearEscuela",{adminPass,escuela:esc});
   const nueva={id:'ESC'+Date.now(),...esc};
   if(!res){escuelasCache.push(nueva);DEMO.escuelas.push(nueva)}else if(!res.ok){showToast(res.error,"error");return}
+  // Recargar desde backend para mostrar datos reales
+  const rE2=await api("getEscuelas");
+  if(rE2&&rE2.ok) escuelasCache=rE2.escuelas;
   renderEscuelasAdmin();
   const o=escuelasCache.map(e=>`<option value="${e.nombre}">${e.nombre}</option>`).join('');
   document.getElementById('adm-filtro-escuela').innerHTML='<option value="">Todas las escuelas</option>'+o;
