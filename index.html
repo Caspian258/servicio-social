@@ -349,7 +349,7 @@ const DEMO = {
 function showView(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));document.getElementById('view-'+id).classList.add('active');const map={checkin:0,alumno:1,qr:2,admin:3};document.querySelectorAll('.nav-btn')[map[id]].classList.add('active')}
 
 async function api(action, data = {}) {
-  if (!BACKEND_URL || BACKEND_URL === "https://script.google.com/macros/s/AKfycbzvaThxuXKUtpVwlfp95wAKtGJc7XEsGNG8Xkx2SwmLBDgf5C7ugR5zXsY1gJsg9PfI/exec") return null;
+  if (!BACKEND_URL || BACKEND_URL === "TU_URL_DE_APPS_SCRIPT_AQUI") return null;
   return new Promise((resolve) => {
     const callbackName = 'cb_' + Date.now();
     const params = new URLSearchParams({
